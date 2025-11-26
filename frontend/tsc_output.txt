@@ -1,0 +1,70 @@
+App.tsx(95,11): error TS2769: No overload matches this call.
+  Overload 1 of 2, '(props: ViewProps): View', gave the following error.
+    Type '{ height?: "100vh" | undefined; overflow?: "hidden" | undefined; flex: number; backgroundColor: string; }' is not assignable to type 'StyleProp<ViewStyle>'.
+      Type '{ height?: "100vh" | undefined; overflow?: "hidden" | undefined; flex: number; backgroundColor: string; }' is not assignable to type 'undefined'.
+  Overload 2 of 2, '(props: ViewProps, context: any): View', gave the following error.
+    Type '{ height?: "100vh" | undefined; overflow?: "hidden" | undefined; flex: number; backgroundColor: string; }' is not assignable to type 'StyleProp<ViewStyle>'.
+      Type '{ height?: "100vh" | undefined; overflow?: "hidden" | undefined; flex: number; backgroundColor: string; }' is not assignable to type 'undefined'.
+App.tsx(107,9): error TS2741: Property 'fonts' is missing in type '{ dark: boolean; colors: { primary: string; background: string; card: string; text: string; border: string; notification: string; }; }' but required in type 'Theme'.
+src/components/NotificationBell.tsx(12,28): error TS2749: 'TouchableOpacity' refers to a value, but is being used as a type here. Did you mean 'typeof TouchableOpacity'?
+src/components/NotificationBell.tsx(17,37): error TS2339: Property 'unreadCount' does not exist on type 'ApiResponse<any> | { unreadCount: number; }'.
+  Property 'unreadCount' does not exist on type 'ApiResponse<any>'.
+src/components/NotificationDropdown.tsx(64,31): error TS2339: Property 'notifications' does not exist on type 'ApiResponse<any>'.
+src/components/NotificationDropdown.tsx(67,9): error TS2367: This comparison appears to be unintentional because the types '"track" | "reaction" | "comment" | "follow" | "mention"' and '"message"' have no overlap.
+src/components/NotificationDropdown.tsx(67,33): error TS2367: This comparison appears to be unintentional because the types '"track" | "reaction" | "comment" | "follow" | "mention"' and '"chat"' have no overlap.
+src/components/WebScrollView.tsx(21,42): error TS2339: Property 'webkitOverflowScrolling' does not exist on type 'CSSStyleDeclaration'.
+src/screens/auth/PreferenceScreen.tsx(110,27): error TS2345: Argument of type '[never, never]' is not assignable to parameter of type 'never'.
+src/screens/auth/SignupScreen.tsx(110,11): error TS7034: Variable 'errors' implicitly has type 'any[]' in some locations where its type cannot be determined.
+src/screens/auth/SignupScreen.tsx(138,47): error TS7005: Variable 'errors' implicitly has an 'any[]' type.
+src/screens/auth/SignupScreen.tsx(212,31): error TS2345: Argument of type '[never, never]' is not assignable to parameter of type 'never'.
+src/screens/main/CreatePostScreen.tsx(179,54): error TS2339: Property 'files' does not exist on type 'ApiResponse<any>'.
+src/screens/main/CreatePostScreen.tsx(179,92): error TS2339: Property 'files' does not exist on type 'ApiResponse<any>'.
+src/screens/main/CreatePostScreen.tsx(211,50): error TS2345: Argument of type '{ content: { text: string; media: { url: any; type: string; filename: any; originalName: any; size: any; }[]; }; category: string; visibility: "normal" | "disguise"; vanishMode: { enabled: boolean; duration: "1hour" | ... 1 more ... | "1week"; } | { ...; }; }' is not assignable to parameter of type '{ content: { text: string; image?: string | undefined; voiceNote?: string | undefined; media?: { url: string; type: "image" | "video" | "audio"; filename: string; originalName: string; size: number; }[] | undefined; }; ... 4 more ...; tags?: string[] | undefined; }'.
+  The types of 'content.media' are incompatible between these types.
+    Type '{ url: any; type: string; filename: any; originalName: any; size: any; }[]' is not assignable to type '{ url: string; type: "image" | "video" | "audio"; filename: string; originalName: string; size: number; }[]'.
+      Type '{ url: any; type: string; filename: any; originalName: any; size: any; }' is not assignable to type '{ url: string; type: "image" | "video" | "audio"; filename: string; originalName: string; size: number; }'.
+        Types of property 'type' are incompatible.
+          Type 'string' is not assignable to type '"image" | "video" | "audio"'.
+src/screens/main/ExploreScreen.tsx(29,17): error TS2339: Property 'updateUserPreferences' does not exist on type 'AuthContextType'.
+src/screens/main/HomeScreen.tsx(505,5): error TS1117: An object literal cannot have multiple properties with the same name.
+src/screens/main/HomeScreen.tsx(510,5): error TS1117: An object literal cannot have multiple properties with the same name.
+src/screens/main/HomeScreen.tsx(515,5): error TS1117: An object literal cannot have multiple properties with the same name.
+src/screens/main/MessengerScreen.tsx(435,5): error TS1117: An object literal cannot have multiple properties with the same name.
+src/screens/main/NotificationsScreen.tsx(171,27): error TS2345: Argument of type '[never, never]' is not assignable to parameter of type 'never'.
+src/screens/main/NotificationsScreen.tsx(177,27): error TS2345: Argument of type '[never, never]' is not assignable to parameter of type 'never'.
+src/screens/main/PostDetailScreen.tsx(355,29): error TS2339: Property 'post' does not exist on type 'ApiResponse<any>'.
+src/screens/main/PostDetailScreen.tsx(418,17): error TS2345: Argument of type '(prevPost: Post | null) => { reactionCounts: { funny: number; rage: number; shock: number; relatable: number; love: number; thinking: number; total: number; } | undefined; userReaction: string | null; ... 6 more ...; comments: (CommentItem & { ...; })[]; } | null' is not assignable to parameter of type 'SetStateAction<Post | null>'.
+  Type '(prevPost: Post | null) => { reactionCounts: { funny: number; rage: number; shock: number; relatable: number; love: number; thinking: number; total: number; } | undefined; userReaction: string | null; ... 6 more ...; comments: (CommentItem & { ...; })[]; } | null' is not assignable to type '(prevState: Post | null) => Post | null'.
+    Type '{ reactionCounts: { funny: number; rage: number; shock: number; relatable: number; love: number; thinking: number; total: number; } | undefined; userReaction: string | null; _id: string; author: { ...; }; ... 4 more ...; comments: (CommentItem & { ...; })[]; } | null' is not assignable to type 'Post | null'.
+      Type '{ reactionCounts: { funny: number; rage: number; shock: number; relatable: number; love: number; thinking: number; total: number; } | undefined; userReaction: string | null; _id: string; ... 5 more ...; comments: Array<ListItem & { type: "comment"; _id: string; author: { _id: string; username: string; avatar?: strin...' is not assignable to type 'Post'.
+        Types of property 'reactionCounts' are incompatible.
+          Type '{ funny: number; rage: number; shock: number; relatable: number; love: number; thinking: number; total: number; } | undefined' is not assignable to type '{ funny: number; rage: number; shock: number; relatable: number; love: number; thinking: number; total: number; }'.
+            Type 'undefined' is not assignable to type '{ funny: number; rage: number; shock: number; relatable: number; love: number; thinking: number; total: number; }'.
+src/screens/main/PostDetailScreen.tsx(593,18): error TS18047: 'post' is possibly 'null'.
+src/screens/main/PostDetailScreen.tsx(594,58): error TS18047: 'post' is possibly 'null'.
+src/screens/main/PostDetailScreen.tsx(598,24): error TS18047: 'post' is possibly 'null'.
+src/screens/main/PostDetailScreen.tsx(603,20): error TS18047: 'post' is possibly 'null'.
+src/screens/main/PostDetailScreen.tsx(607,27): error TS18047: 'post' is possibly 'null'.
+src/screens/main/PostDetailScreen.tsx(611,17): error TS18047: 'post' is possibly 'null'.
+src/screens/main/PostDetailScreen.tsx(614,27): error TS18047: 'post' is possibly 'null'.
+src/screens/main/PostDetailScreen.tsx(616,26): error TS18047: 'post' is possibly 'null'.
+src/screens/main/SearchScreen.tsx(191,27): error TS2345: Argument of type '[never, never]' is not assignable to parameter of type 'never'.
+src/screens/main/SearchScreen.tsx(193,27): error TS2345: Argument of type '[never, never]' is not assignable to parameter of type 'never'.
+src/screens/main/WhisperWallScreen.tsx(873,52): error TS2345: Argument of type '[never, { postId: any; }]' is not assignable to parameter of type 'never'.
+src/screens/main/WhisperWallScreen.tsx(950,45): error TS2345: Argument of type '[never, { postId: any; }]' is not assignable to parameter of type 'never'.
+src/screens/OnboardingScreen.tsx(239,15): error TS2769: No overload matches this call.
+  Overload 1 of 2, '(props: LinearGradientProps): LinearGradient', gave the following error.
+    Type 'string[]' is not assignable to type 'readonly [ColorValue, ColorValue, ...ColorValue[]]'.
+      Source provides no match for required element at position 0 in target.
+  Overload 2 of 2, '(props: LinearGradientProps, context: any): LinearGradient', gave the following error.
+    Type 'string[]' is not assignable to type 'readonly [ColorValue, ColorValue, ...ColorValue[]]'.
+      Source provides no match for required element at position 0 in target.
+src/utils/AppInitializer.ts(31,13): error TS7053: Element implicitly has an 'any' type because expression of type 'string' can't be used to index type '{ "android.permission.READ_CALENDAR": PermissionStatus; "android.permission.WRITE_CALENDAR": PermissionStatus; "android.permission.CAMERA": PermissionStatus; ... 39 more ...; "android.permission.NEARBY_WIFI_DEVICES": PermissionStatus; }'.
+  No index signature with a parameter of type 'string' was found on type '{ "android.permission.READ_CALENDAR": PermissionStatus; "android.permission.WRITE_CALENDAR": PermissionStatus; "android.permission.CAMERA": PermissionStatus; ... 39 more ...; "android.permission.NEARBY_WIFI_DEVICES": PermissionStatus; }'.
+src/utils/simpleWebScrollFix.ts(10,22): error TS2345: Argument of type '(element: HTMLElement) => void' is not assignable to parameter of type '(value: Element, key: number, parent: NodeListOf<Element>) => void'.
+  Types of parameters 'element' and 'value' are incompatible.
+    Type 'Element' is missing the following properties from type 'HTMLElement': accessKey, accessKeyLabel, autocapitalize, autocorrect, and 129 more.
+src/utils/simpleWebScrollFix.ts(14,23): error TS2339: Property 'webkitOverflowScrolling' does not exist on type 'CSSStyleDeclaration'.
+src/utils/simpleWebScrollFix.ts(32,17): error TS2339: Property 'webkitOverflowScrolling' does not exist on type 'CSSStyleDeclaration'.
+src/utils/webScrollFix.ts(28,23): error TS2339: Property 'webkitOverflowScrolling' does not exist on type 'CSSStyleDeclaration'.
+src/utils/webScrollFix.ts(124,17): error TS2339: Property 'webkitOverflowScrolling' does not exist on type 'CSSStyleDeclaration'.
