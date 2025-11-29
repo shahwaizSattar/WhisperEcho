@@ -120,7 +120,6 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
   const login = async (email: string, password: string): Promise<{ success: boolean; message: string }> => {
     try {
-      setIsLoading(true);
       const response = await authAPI.login(email, password);
       
       if (response.success) {
@@ -166,15 +165,11 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         success: false, 
         message: errorMessage
       };
-    } finally {
-      setIsLoading(false);
     }
   };
 
   const signup = async (userData: SignupData): Promise<{ success: boolean; message: string }> => {
     try {
-      setIsLoading(true);
-      
       // Log the data being sent for debugging
       console.log('Signup request data:', JSON.stringify(userData, null, 2));
       
@@ -228,14 +223,11 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         success: false, 
         message: errorMessage
       };
-    } finally {
-      setIsLoading(false);
     }
   };
 
   const logout = async (): Promise<void> => {
     try {
-      setIsLoading(true);
       await AsyncStorage.multiRemove(['authToken', 'userPreferences']);
       setToken(null);
       setUser(null);
@@ -245,8 +237,6 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       } catch {}
     } catch (error) {
       console.log('Logout error:', error);
-    } finally {
-      setIsLoading(false);
     }
   };
 

@@ -25,14 +25,14 @@ import { useAuth } from '../../context/AuthContext';
 const LoginScreen: React.FC = () => {
   const navigation = useNavigation();
   const { theme } = useTheme();
-  const { login, isLoading } = useAuth();
+  const { login } = useAuth();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [emailError, setEmailError] = useState('');
   const [passwordError, setPasswordError] = useState('');
   const [generalError, setGeneralError] = useState('');
-  const [isProcessing, setIsProcessing] = useState(false);
+  const [isLoggingIn, setIsLoggingIn] = useState(false);
 
   const formScale = useSharedValue(0.9);
   const formOpacity = useSharedValue(0);
@@ -81,7 +81,7 @@ const LoginScreen: React.FC = () => {
     }
 
     try {
-      setIsProcessing(true);
+      setIsLoggingIn(true);
 
       const result = await login(email.toLowerCase().trim(), password);
       if (result.success) {
@@ -91,15 +91,13 @@ const LoginScreen: React.FC = () => {
           text2: result.message,
           visibilityTime: 3000,
         });
-        setTimeout(() => {
-          setIsProcessing(false);
-        }, 1500);
+        // Keep loading state for smooth transition to main app
       } else {
-        setIsProcessing(false);
+        setIsLoggingIn(false);
         setGeneralError(result.message || 'Login failed. Please check your credentials.');
       }
     } catch (error: any) {
-      setIsProcessing(false);
+      setIsLoggingIn(false);
       const errorMessage = error.response?.data?.message || 'Something went wrong. Please try again.';
       setGeneralError(errorMessage);
     }
@@ -342,13 +340,13 @@ const LoginScreen: React.FC = () => {
               <TouchableOpacity
                 style={[
                   styles.loginButton,
-                  (isLoading || !email || !password || isProcessing) && styles.loginButtonDisabled,
+                  (isLoggingIn || !email || !password) && styles.loginButtonDisabled,
                 ]}
                 onPress={handleLogin}
-                disabled={isLoading || !email || !password || isProcessing}
+                disabled={isLoggingIn || !email || !password}
               >
                 <Text style={styles.loginButtonText}>
-                  {isLoading || isProcessing ? 'Signing In...' : 'Sign In'}
+                  {isLoggingIn ? 'Signing In...' : 'Sign In'}
                 </Text>
               </TouchableOpacity>
 

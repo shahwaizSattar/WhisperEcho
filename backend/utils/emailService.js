@@ -59,22 +59,19 @@ const sendOtpEmail = async (email, otp) => {
   return sendEmail(email, 'Your OTP Code', htmlContent);
 };
 
-const sendPasswordResetEmail = async (email, resetLink) => {
+const sendPasswordResetEmail = async (email, otp) => {
   const htmlContent = `
     <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
       <h2>Password Reset Request</h2>
-      <p>We received a request to reset your password. Click the button below to reset it:</p>
-      <div style="margin: 20px 0;">
-        <a href="${resetLink}" style="background: #007bff; color: white; padding: 12px 24px; text-decoration: none; border-radius: 4px; display: inline-block;">
-          Reset Password
-        </a>
+      <p>We received a request to reset your password. Use the code below to reset it:</p>
+      <div style="background: #f0f0f0; padding: 20px; text-align: center; font-size: 32px; font-weight: bold; letter-spacing: 5px; margin: 20px 0;">
+        ${otp}
       </div>
-      <p>Or copy this link: <a href="${resetLink}">${resetLink}</a></p>
-      <p>This link expires in 1 hour.</p>
+      <p>This code expires in 10 minutes.</p>
       <p>If you didn't request this, please ignore this email.</p>
     </div>
   `;
-  return sendEmail(email, 'Password Reset Request', htmlContent);
+  return sendEmail(email, 'Password Reset Code', htmlContent);
 };
 
 const verifyConnection = async () => {

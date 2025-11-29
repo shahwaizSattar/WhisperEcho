@@ -159,4 +159,182 @@ router.post('/refresh-token', async (req, res) => {
   }
 });
 
+// POST /api/auth/forgot-password
+router.post('/forgot-password', async (req, res) => {
+  try {
+    const { emailOrPhone } = req.body;
+    
+    if (!emailOrPhone) {
+      return res.status(400).json({ success: false, message: 'Email or phone is required' });
+    }
+
+    // Find user by email or phone
+    const user = await User.findOne({
+      $or: [{ email: emailOrPhone }, { phone: emailOrPhone }]
+    });
+
+    if (!user) {
+      return res.status(404).json({ success: false, message: 'User not found' });
+    }
+
+    // Generate OTP
+    const { generateOTP } = require('../utils/otpService');
+    const { sendPasswordResetEmail } = require('../utils/emailService');
+    const OTP = require('../models/OTP');
+
+    const otp = generateOTP();
+    const expiresAt = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes
+
+    // Delete any existing OTP for this email
+    await OTP.deleteMany({ email: user.email, purpose: 'forgot-password' });
+
+    // Create new OTP
+    await OTP.create({
+      email: user.email,
+      otp,
+      purpose: 'forgot-password',
+      expiresAt
+    });
+
+    // Send OTP email
+    await sendPasswordResetEmail(user.email, otp);
+
+    console.log('Password reset OTP sent to:', user.email);
+
+    res.json({
+      success: true,
+      message: 'Password reset code sent to your email'
+    });
+  } catch (error) {
+    console.error('Forgot password error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to send reset code',
+      error: process.env.NODE_ENV === 'development' ? error.message : undefined
+    });
+  }
+});
+
+// POST /api/auth/verify-reset-code
+router.post('/verify-reset-code', async (req, res) => {
+  try {
+    const { emailOrPhone, code } = req.body;
+
+    if (!emailOrPhone || !code) {
+      return res.status(400).json({ success: false, message: 'Email and code are required' });
+    }
+
+    // Find user
+    const user = await User.findOne({
+      $or: [{ email: emailOrPhone }, { phone: emailOrPhone }]
+    });
+
+    if (!user) {
+      return res.status(404).json({ success: false, message: 'User not found' });
+    }
+
+    const OTP = require('../models/OTP');
+
+    // Find OTP
+    const otpRecord = await OTP.findOne({
+      email: user.email,
+      purpose: 'forgot-password',
+      expiresAt: { $gt: new Date() }
+    });
+
+    if (!otpRecord) {
+      return res.status(400).json({ success: false, message: 'Invalid or expired code' });
+    }
+
+    // Check attempts
+    if (otpRecord.attempts >= otpRecord.maxAttempts) {
+      await OTP.deleteOne({ _id: otpRecord._id });
+      return res.status(400).json({ success: false, message: 'Too many attempts. Please request a new code.' });
+    }
+
+    // Verify OTP
+    if (otpRecord.otp !== code) {
+      otpRecord.attempts += 1;
+      await otpRecord.save();
+      return res.status(400).json({ success: false, message: 'Invalid code' });
+    }
+
+    // Mark as verified
+    otpRecord.isVerified = true;
+    await otpRecord.save();
+
+    res.json({
+      success: true,
+      message: 'Code verified successfully'
+    });
+  } catch (error) {
+    console.error('Verify reset code error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to verify code',
+      error: process.env.NODE_ENV === 'development' ? error.message : undefined
+    });
+  }
+});
+
+// POST /api/auth/reset-password
+router.post('/reset-password', async (req, res) => {
+  try {
+    const { emailOrPhone, code, newPassword } = req.body;
+
+    if (!emailOrPhone || !code || !newPassword) {
+      return res.status(400).json({ success: false, message: 'All fields are required' });
+    }
+
+    if (newPassword.length < 6) {
+      return res.status(400).json({ success: false, message: 'Password must be at least 6 characters' });
+    }
+
+    // Find user
+    const user = await User.findOne({
+      $or: [{ email: emailOrPhone }, { phone: emailOrPhone }]
+    });
+
+    if (!user) {
+      return res.status(404).json({ success: false, message: 'User not found' });
+    }
+
+    const OTP = require('../models/OTP');
+
+    // Find verified OTP
+    const otpRecord = await OTP.findOne({
+      email: user.email,
+      otp: code,
+      purpose: 'forgot-password',
+      isVerified: true,
+      expiresAt: { $gt: new Date() }
+    });
+
+    if (!otpRecord) {
+      return res.status(400).json({ success: false, message: 'Invalid or expired code. Please verify the code first.' });
+    }
+
+    // Update password
+    user.password = newPassword;
+    await user.save();
+
+    // Delete OTP
+    await OTP.deleteOne({ _id: otpRecord._id });
+
+    console.log('Password reset successful for:', user.email);
+
+    res.json({
+      success: true,
+      message: 'Password reset successfully'
+    });
+  } catch (error) {
+    console.error('Reset password error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to reset password',
+      error: process.env.NODE_ENV === 'development' ? error.message : undefined
+    });
+  }
+});
+
 module.exports = router;
