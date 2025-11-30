@@ -8,7 +8,7 @@ const getBaseURL = () => {
   const envBase = (process as any)?.env?.EXPO_PUBLIC_API_BASE as string | undefined;
   if (envBase) return envBase.endsWith('/api') ? envBase : `${envBase}/api`;
 
-  if (!__DEV__) return 'https://your-production-url.com/api';
+  if (!__DEV__) return 'https://echo-yddc.onrender.com/api';
 
   // Development defaults per platform
   const YOUR_COMPUTER_IP = '192.168.10.2'; // ✅ Updated to match current backend IP
