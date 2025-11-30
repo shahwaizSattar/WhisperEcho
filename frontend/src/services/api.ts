@@ -452,6 +452,25 @@ export const postsAPI = {
     return response.data;
   },
 
+  addReply: async (
+    postId: string,
+    commentId: string,
+    content: string
+  ): Promise<ApiResponse> => {
+    const response: AxiosResponse<ApiResponse> = await api.post(
+      `/posts/${postId}/comments/${commentId}/replies`,
+      { content }
+    );
+    return response.data;
+  },
+
+  getReplies: async (postId: string, commentId: string): Promise<ApiResponse> => {
+    const response: AxiosResponse<ApiResponse> = await api.get(
+      `/posts/${postId}/comments/${commentId}/replies`
+    );
+    return response.data;
+  },
+
   editPost: async (postId: string, postData: {
     content?: {
       text: string;

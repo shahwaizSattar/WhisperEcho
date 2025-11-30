@@ -59,4 +59,52 @@ export const reactionsAPI = {
     );
     return response.data;
   },
+
+  // Comment reactions
+  addCommentReaction: async (
+    postId: string,
+    commentId: string,
+    reactionType: 'funny' | 'love'
+  ): Promise<ApiResponse> => {
+    const response: AxiosResponse<ApiResponse> = await api.post(
+      `/reactions/comments/${postId}/${commentId}`,
+      { reactionType }
+    );
+    return response.data;
+  },
+
+  removeCommentReaction: async (
+    postId: string,
+    commentId: string
+  ): Promise<ApiResponse> => {
+    const response: AxiosResponse<ApiResponse> = await api.delete(
+      `/reactions/comments/${postId}/${commentId}`
+    );
+    return response.data;
+  },
+
+  // Reply reactions
+  addReplyReaction: async (
+    postId: string,
+    commentId: string,
+    replyId: string,
+    reactionType: 'funny' | 'love'
+  ): Promise<ApiResponse> => {
+    const response: AxiosResponse<ApiResponse> = await api.post(
+      `/reactions/comments/${postId}/${commentId}/replies/${replyId}`,
+      { reactionType }
+    );
+    return response.data;
+  },
+
+  removeReplyReaction: async (
+    postId: string,
+    commentId: string,
+    replyId: string
+  ): Promise<ApiResponse> => {
+    const response: AxiosResponse<ApiResponse> = await api.delete(
+      `/reactions/comments/${postId}/${commentId}/replies/${replyId}`
+    );
+    return response.data;
+  },
 };

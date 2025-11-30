@@ -278,15 +278,18 @@ router.post('/comments/:postId/:commentId', authenticateToken, [
       timestamp: new Date()
     });
 
+    // Update reaction counts
+    comment.reactionCounts = comment.reactionCounts || { funny: 0, love: 0, total: 0 };
+    comment.reactionCounts.funny = comment.reactions.funny.length;
+    comment.reactionCounts.love = comment.reactions.love.length;
+    comment.reactionCounts.total = comment.reactionCounts.funny + comment.reactionCounts.love;
+
     await post.save();
 
     res.json({
       success: true,
       message: 'Comment reaction added',
-      reactions: {
-        funny: comment.reactions.funny.length,
-        love: comment.reactions.love.length
-      },
+      reactions: comment.reactionCounts,
       userReaction: reactionType
     });
 
@@ -326,20 +329,158 @@ router.delete('/comments/:postId/:commentId', authenticateToken, async (req, res
       comment.reactions[type] = comment.reactions[type].filter(r => !r.user.equals(userId));
     });
 
+    // Update reaction counts
+    comment.reactionCounts = comment.reactionCounts || { funny: 0, love: 0, total: 0 };
+    comment.reactionCounts.funny = comment.reactions.funny.length;
+    comment.reactionCounts.love = comment.reactions.love.length;
+    comment.reactionCounts.total = comment.reactionCounts.funny + comment.reactionCounts.love;
+
     await post.save();
 
     res.json({
       success: true,
       message: 'Comment reaction removed',
-      reactions: {
-        funny: comment.reactions.funny.length,
-        love: comment.reactions.love.length
-      },
+      reactions: comment.reactionCounts,
       userReaction: null
     });
 
   } catch (error) {
     console.error('Remove comment reaction error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Server error'
+    });
+  }
+});
+
+// POST /api/reactions/comments/:postId/:commentId/replies/:replyId - React to reply
+router.post('/comments/:postId/:commentId/replies/:replyId', authenticateToken, [
+  body('reactionType').isIn(['funny', 'love'])
+], async (req, res) => {
+  try {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({
+        success: false,
+        message: 'Invalid reaction type'
+      });
+    }
+
+    const { postId, commentId, replyId } = req.params;
+    const { reactionType } = req.body;
+    const userId = req.user._id;
+
+    const post = await Post.findById(postId);
+    if (!post) {
+      return res.status(404).json({
+        success: false,
+        message: 'Post not found'
+      });
+    }
+
+    const comment = post.comments.id(commentId);
+    if (!comment) {
+      return res.status(404).json({
+        success: false,
+        message: 'Comment not found'
+      });
+    }
+
+    const reply = comment.replies.id(replyId);
+    if (!reply) {
+      return res.status(404).json({
+        success: false,
+        message: 'Reply not found'
+      });
+    }
+
+    // Remove existing reaction from this user
+    Object.keys(reply.reactions).forEach(type => {
+      reply.reactions[type] = reply.reactions[type].filter(r => !r.user.equals(userId));
+    });
+
+    // Add new reaction
+    reply.reactions[reactionType].push({
+      user: userId,
+      timestamp: new Date()
+    });
+
+    // Update reaction counts
+    reply.reactionCounts = reply.reactionCounts || { funny: 0, love: 0, total: 0 };
+    reply.reactionCounts.funny = reply.reactions.funny.length;
+    reply.reactionCounts.love = reply.reactions.love.length;
+    reply.reactionCounts.total = reply.reactionCounts.funny + reply.reactionCounts.love;
+
+    await post.save();
+
+    res.json({
+      success: true,
+      message: 'Reply reaction added',
+      reactions: reply.reactionCounts,
+      userReaction: reactionType
+    });
+
+  } catch (error) {
+    console.error('React to reply error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Server error'
+    });
+  }
+});
+
+// DELETE /api/reactions/comments/:postId/:commentId/replies/:replyId - Remove reaction from reply
+router.delete('/comments/:postId/:commentId/replies/:replyId', authenticateToken, async (req, res) => {
+  try {
+    const { postId, commentId, replyId } = req.params;
+    const userId = req.user._id;
+
+    const post = await Post.findById(postId);
+    if (!post) {
+      return res.status(404).json({
+        success: false,
+        message: 'Post not found'
+      });
+    }
+
+    const comment = post.comments.id(commentId);
+    if (!comment) {
+      return res.status(404).json({
+        success: false,
+        message: 'Comment not found'
+      });
+    }
+
+    const reply = comment.replies.id(replyId);
+    if (!reply) {
+      return res.status(404).json({
+        success: false,
+        message: 'Reply not found'
+      });
+    }
+
+    // Remove reaction from this user
+    Object.keys(reply.reactions).forEach(type => {
+      reply.reactions[type] = reply.reactions[type].filter(r => !r.user.equals(userId));
+    });
+
+    // Update reaction counts
+    reply.reactionCounts = reply.reactionCounts || { funny: 0, love: 0, total: 0 };
+    reply.reactionCounts.funny = reply.reactions.funny.length;
+    reply.reactionCounts.love = reply.reactions.love.length;
+    reply.reactionCounts.total = reply.reactionCounts.funny + reply.reactionCounts.love;
+
+    await post.save();
+
+    res.json({
+      success: true,
+      message: 'Reply reaction removed',
+      reactions: reply.reactionCounts,
+      userReaction: null
+    });
+
+  } catch (error) {
+    console.error('Remove reply reaction error:', error);
     res.status(500).json({
       success: false,
       message: 'Server error'

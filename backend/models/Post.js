@@ -120,7 +120,26 @@ const postSchema = new mongoose.Schema({
     reactions: {
       funny: [{ user: { type: mongoose.Schema.Types.ObjectId, ref: 'User' }, timestamp: Date }],
       love: [{ user: { type: mongoose.Schema.Types.ObjectId, ref: 'User' }, timestamp: Date }]
-    }
+    },
+    reactionCounts: {
+      funny: { type: Number, default: 0 },
+      love: { type: Number, default: 0 },
+      total: { type: Number, default: 0 }
+    },
+    replies: [{
+      author: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
+      content: { type: String, required: true, maxlength: 500 },
+      createdAt: { type: Date, default: Date.now },
+      reactions: {
+        funny: [{ user: { type: mongoose.Schema.Types.ObjectId, ref: 'User' }, timestamp: Date }],
+        love: [{ user: { type: mongoose.Schema.Types.ObjectId, ref: 'User' }, timestamp: Date }]
+      },
+      reactionCounts: {
+        funny: { type: Number, default: 0 },
+        love: { type: Number, default: 0 },
+        total: { type: Number, default: 0 }
+      }
+    }]
   }],
   vanishMode: {
     enabled: { type: Boolean, default: false },

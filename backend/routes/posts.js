@@ -594,6 +594,160 @@ router.post('/:postId/comments', authenticateToken, [
   }
 });
 
+// POST /api/posts/:postId/comments/:commentId/replies - Add reply to comment
+router.post('/:postId/comments/:commentId/replies', authenticateToken, [
+  body('content').notEmpty().isLength({ max: 500 })
+], async (req, res) => {
+  try {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({
+        success: false,
+        message: 'Validation failed',
+        errors: errors.array()
+      });
+    }
+
+    const { postId, commentId } = req.params;
+    const { content } = req.body;
+    const userId = req.user._id;
+
+    const post = await Post.findById(postId);
+    if (!post) {
+      return res.status(404).json({
+        success: false,
+        message: 'Post not found'
+      });
+    }
+
+    // Check if comments are locked
+    if (post.interactions?.commentsLocked) {
+      return res.status(403).json({
+        success: false,
+        message: 'Comments are locked on this post'
+      });
+    }
+
+    const comment = post.comments.id(commentId);
+    if (!comment) {
+      return res.status(404).json({
+        success: false,
+        message: 'Comment not found'
+      });
+    }
+
+    // Moderate reply content
+    const modResult = moderateContent(content);
+    
+    const reply = {
+      author: userId,
+      content,
+      createdAt: new Date(),
+      reactions: { funny: [], love: [] },
+      reactionCounts: { funny: 0, love: 0, total: 0 }
+    };
+
+    comment.replies = comment.replies || [];
+    comment.replies.push(reply);
+    await post.save();
+
+    // Populate the new reply
+    await post.populate('comments.replies.author', 'username avatar');
+    const newReply = comment.replies[comment.replies.length - 1];
+
+    // Notify comment author
+    if (!comment.author.equals(userId)) {
+      const commentAuthor = await User.findById(comment.author);
+
+      if (commentAuthor?.settings?.notifications?.comments !== false) {
+        try {
+          await Notification.create({
+            user: comment.author,
+            actor: userId,
+            type: 'reply',
+            post: post._id,
+            commentId: comment._id,
+            metadata: {
+              replyContent: content.slice(0, 140)
+            }
+          });
+        } catch (notifyError) {
+          console.error('Create reply notification error:', notifyError);
+        }
+      }
+    }
+
+    res.status(201).json({
+      success: true,
+      message: 'Reply added successfully',
+      reply: newReply
+    });
+
+  } catch (error) {
+    console.error('Add reply error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Server error'
+    });
+  }
+});
+
+// GET /api/posts/:postId/comments/:commentId/replies - Get replies for a comment
+router.get('/:postId/comments/:commentId/replies', authenticateToken, async (req, res) => {
+  try {
+    const { postId, commentId } = req.params;
+    const userId = req.user._id;
+
+    const post = await Post.findById(postId).populate('comments.replies.author', 'username avatar');
+    if (!post) {
+      return res.status(404).json({
+        success: false,
+        message: 'Post not found'
+      });
+    }
+
+    const comment = post.comments.id(commentId);
+    if (!comment) {
+      return res.status(404).json({
+        success: false,
+        message: 'Comment not found'
+      });
+    }
+
+    // Add userReaction to each reply
+    const repliesWithUserReaction = (comment.replies || []).map(reply => {
+      let userReaction = null;
+      if (reply.reactions.funny.some(r => r.user.equals(userId))) {
+        userReaction = 'funny';
+      } else if (reply.reactions.love.some(r => r.user.equals(userId))) {
+        userReaction = 'love';
+      }
+
+      return {
+        ...reply.toObject(),
+        userReaction,
+        reactionCounts: reply.reactionCounts || {
+          funny: reply.reactions.funny.length,
+          love: reply.reactions.love.length,
+          total: reply.reactions.funny.length + reply.reactions.love.length
+        }
+      };
+    });
+
+    res.json({
+      success: true,
+      replies: repliesWithUserReaction
+    });
+
+  } catch (error) {
+    console.error('Get replies error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Server error'
+    });
+  }
+});
+
 // PUT /api/posts/:postId - Edit post
 router.put('/:postId', authenticateToken, [
   body('content.text').optional().isLength({ max: 2000 }),
