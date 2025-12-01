@@ -66,7 +66,7 @@ const ChatScreen: React.FC = () => {
   const [uploading, setUploading] = useState(false);
   const [recording, setRecording] = useState<Audio.Recording | null>(null);
   const [isRecording, setIsRecording] = useState(false);
-  const [showEmojiPicker, setShowEmojiPicker] = useState(false);
+
   const [showAttachMenu, setShowAttachMenu] = useState(false);
   const [playingAudio, setPlayingAudio] = useState<{ [key: string]: Audio.Sound }>({});
   const [audioStatus, setAudioStatus] = useState<{ [key: string]: { isPlaying: boolean; duration: number; position: number } }>({});
@@ -250,34 +250,7 @@ const ChatScreen: React.FC = () => {
       paddingVertical: 10,
       marginRight: 8,
     },
-    emojiButton: {
-      paddingHorizontal: 12,
-      paddingVertical: 10,
-      marginRight: 8,
-    },
-    emojiPickerModal: {
-      flex: 1,
-      backgroundColor: 'rgba(0,0,0,0.5)',
-      justifyContent: 'flex-end',
-    },
-    emojiPickerContainer: {
-      backgroundColor: theme.colors.surface,
-      borderTopLeftRadius: 20,
-      borderTopRightRadius: 20,
-      paddingTop: 20,
-      paddingBottom: 40,
-      maxHeight: '50%',
-    },
-    emojiGrid: {
-      flexDirection: 'row',
-      flexWrap: 'wrap',
-      padding: 16,
-      gap: 8,
-    },
-    emojiItem: {
-      fontSize: 32,
-      padding: 8,
-    },
+
     attachMenuModal: {
       flex: 1,
       backgroundColor: 'rgba(0,0,0,0.5)',
@@ -502,36 +475,43 @@ const ChatScreen: React.FC = () => {
 
   const pickMedia = async () => {
     try {
+      console.log('📷 Opening media picker...');
       const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
       if (status !== 'granted') {
-        Toast.show({ type: 'error', text1: 'Permission denied', text2: 'Please allow media access' });
+        console.log('❌ Media permission denied');
+        Toast.show({ type: 'error', text1: 'Permission denied', text2: 'Please allow media access in settings' });
         return;
       }
 
+      console.log('✅ Media permission granted, launching picker...');
       const result = await ImagePicker.launchImageLibraryAsync({
         mediaTypes: ['images', 'videos'],
         allowsMultipleSelection: true,
         quality: 0.8,
         videoMaxDuration: 60,
+        allowsEditing: false,
       });
 
-      if (!result.canceled && result.assets) {
+      console.log('📱 Media picker result:', result);
+
+      if (!result.canceled && result.assets && result.assets.length > 0) {
         setUploading(true);
+        Toast.show({ type: 'info', text1: 'Uploading...', text2: `Processing ${result.assets.length} file(s)` });
+        
         try {
-          const files = result.assets.map(asset => ({
+          const files = result.assets.map((asset, index) => ({
             uri: asset.uri,
             type: asset.type === 'video' ? 'video/mp4' : 'image/jpeg',
-            name: asset.fileName || `media_${Date.now()}.${asset.type === 'video' ? 'mp4' : 'jpg'}`,
+            name: asset.fileName || `media_${Date.now()}_${index}.${asset.type === 'video' ? 'mp4' : 'jpg'}`,
             mediaType: asset.type as 'photo' | 'video',
           }));
 
-          console.log('📤 Uploading files:', files);
+          console.log('📤 Uploading files:', files.map(f => ({ name: f.name, type: f.type, mediaType: f.mediaType })));
           const uploadRes = await mediaAPI.uploadMultiple(files);
           console.log('📥 Upload response:', uploadRes);
           
-          // Backend returns { success, message, files } directly
           const responseFiles = (uploadRes as any).files;
-          if (uploadRes.success && responseFiles) {
+          if (uploadRes.success && responseFiles && responseFiles.length > 0) {
             const mediaItems = responseFiles.map((file: any) => ({
               url: file.url,
               type: file.mimetype?.startsWith('video/') ? 'video' as const : 'image' as const,
@@ -539,105 +519,146 @@ const ChatScreen: React.FC = () => {
               originalName: file.originalname,
               size: file.size
             }));
-            console.log('✅ Media items to add:', mediaItems);
+            console.log('✅ Media items processed:', mediaItems);
             setSelectedMedia(prev => [...prev, ...mediaItems]);
-            Toast.show({ type: 'success', text1: 'Media uploaded', text2: `${mediaItems.length} file(s) ready to send` });
+            Toast.show({ type: 'success', text1: 'Media ready!', text2: `${mediaItems.length} file(s) ready to send` });
           } else {
-            Toast.show({ type: 'error', text1: 'Upload failed', text2: 'No files returned from server' });
+            console.error('❌ Upload failed - no files returned:', uploadRes);
+            Toast.show({ type: 'error', text1: 'Upload failed', text2: uploadRes.message || 'No files returned from server' });
           }
         } catch (error: any) {
           console.error('❌ Upload error:', error);
-          Toast.show({ type: 'error', text1: 'Upload failed', text2: error?.response?.data?.message || 'Failed to upload media' });
+          const errorMessage = error?.response?.data?.message || error?.message || 'Failed to upload media';
+          Toast.show({ type: 'error', text1: 'Upload failed', text2: errorMessage });
         } finally {
           setUploading(false);
         }
+      } else {
+        console.log('📷 Media picker cancelled or no assets selected');
       }
     } catch (error) {
-      console.error('Media picker error:', error);
-      Toast.show({ type: 'error', text1: 'Error', text2: 'Failed to pick media' });
+      console.error('❌ Media picker error:', error);
+      Toast.show({ type: 'error', text1: 'Error', text2: 'Failed to open media picker' });
+      setUploading(false);
     }
   };
 
-  const COMMON_EMOJIS = [
-    '😀', '😃', '😄', '😁', '😅', '😂', '🤣', '😊', '😇', '🙂',
-    '🙃', '😉', '😌', '😍', '🥰', '😘', '😗', '😙', '😚', '😋',
-    '😛', '😝', '😜', '🤪', '🤨', '🧐', '🤓', '😎', '🥳', '😏',
-    '😒', '😞', '😔', '😟', '😕', '🙁', '☹️', '😣', '😖', '😫',
-    '😩', '🥺', '😢', '😭', '😤', '😠', '😡', '🤬', '🤯', '😳',
-    '🥵', '🥶', '😱', '😨', '😰', '😥', '😓', '🤗', '🤔', '🤭',
-    '🤫', '🤥', '😶', '😐', '😑', '😬', '🙄', '😯', '😦', '😧',
-    '😮', '😲', '🥱', '😴', '🤤', '😪', '😵', '🤐', '🥴', '🤢',
-    '🤮', '🤧', '😷', '🤒', '🤕', '🤑', '🤠', '👍', '👎', '👌',
-    '✌️', '🤞', '🤟', '🤘', '🤙', '👈', '👉', '👆', '👇', '☝️',
-    '✋', '🤚', '🖐️', '🖖', '👋', '🤝', '💪', '🙏', '✍️', '💅',
-    '❤️', '🧡', '💛', '💚', '💙', '💜', '🖤', '🤍', '🤎', '💔',
-    '❣️', '💕', '💞', '💓', '💗', '💖', '💘', '💝', '💟', '☮️',
-    '⭐', '🌟', '✨', '⚡', '🔥', '💥', '☄️', '🌈', '☀️', '🌤️',
-    '⛅', '🌥️', '☁️', '🌦️', '🌧️', '⛈️', '🌩️', '🌨️', '❄️', '☃️',
-  ];
+
 
   const startRecording = async () => {
     try {
+      console.log('🎤 Starting audio recording...');
       const hasPermission = await requestAudioPermission();
       if (!hasPermission) {
+        Toast.show({ type: 'error', text1: 'Permission denied', text2: 'Please allow microphone access' });
         return;
       }
 
       await Audio.setAudioModeAsync({
         allowsRecordingIOS: true,
         playsInSilentModeIOS: true,
+        staysActiveInBackground: false,
+        shouldDuckAndroid: true,
+        playThroughEarpieceAndroid: false,
       });
 
-      const { recording } = await Audio.Recording.createAsync(
-        Audio.RecordingOptionsPresets.HIGH_QUALITY
-      );
+      const recordingOptions = {
+        android: {
+          extension: '.m4a',
+          outputFormat: Audio.RECORDING_OPTION_ANDROID_OUTPUT_FORMAT_MPEG_4,
+          audioEncoder: Audio.RECORDING_OPTION_ANDROID_AUDIO_ENCODER_AAC,
+          sampleRate: 44100,
+          numberOfChannels: 2,
+          bitRate: 128000,
+        },
+        ios: {
+          extension: '.m4a',
+          outputFormat: Audio.RECORDING_OPTION_IOS_OUTPUT_FORMAT_MPEG4AAC,
+          audioQuality: Audio.RECORDING_OPTION_IOS_AUDIO_QUALITY_HIGH,
+          sampleRate: 44100,
+          numberOfChannels: 2,
+          bitRate: 128000,
+          linearPCMBitDepth: 16,
+          linearPCMIsBigEndian: false,
+          linearPCMIsFloat: false,
+        },
+        web: {
+          mimeType: 'audio/webm;codecs=opus',
+          bitsPerSecond: 128000,
+        },
+      };
+
+      const { recording } = await Audio.Recording.createAsync(recordingOptions);
       setRecording(recording);
       setIsRecording(true);
-      Toast.show({ type: 'info', text1: 'Recording...', text2: 'Tap again to stop' });
+      Toast.show({ type: 'info', text1: 'Recording...', text2: 'Tap the microphone again to stop' });
+      console.log('✅ Recording started successfully');
     } catch (error) {
-      console.error('Failed to start recording:', error);
-      Toast.show({ type: 'error', text1: 'Error', text2: 'Failed to start recording' });
+      console.error('❌ Failed to start recording:', error);
+      Toast.show({ type: 'error', text1: 'Recording Error', text2: 'Failed to start recording. Please try again.' });
+      setIsRecording(false);
+      setRecording(null);
     }
   };
 
   const stopRecording = async () => {
-    if (!recording) return;
+    if (!recording) {
+      console.log('⚠️ No recording to stop');
+      return;
+    }
 
     try {
+      console.log('🛑 Stopping audio recording...');
       setIsRecording(false);
       await recording.stopAndUnloadAsync();
       const uri = recording.getURI();
+      console.log('📁 Recording saved to:', uri);
       
       if (uri) {
         setUploading(true);
+        Toast.show({ type: 'info', text1: 'Uploading...', text2: 'Processing your voice note' });
+        
         const file = {
           uri,
           type: 'audio/m4a',
-          name: `audio_${Date.now()}.m4a`,
-          mediaType: 'photo' as 'photo' | 'video',
+          name: `voice_note_${Date.now()}.m4a`,
+          mediaType: 'photo' as 'photo' | 'video', // This is required by the upload API
         };
 
+        console.log('📤 Uploading voice note:', file);
         const uploadRes = await mediaAPI.uploadMultiple([file]);
+        console.log('📥 Upload response:', uploadRes);
+        
         const responseFiles = (uploadRes as any).files;
         
-        if (uploadRes.success && responseFiles) {
+        if (uploadRes.success && responseFiles && responseFiles.length > 0) {
           const mediaItems = responseFiles.map((file: any) => ({
             url: file.url,
-            type: 'audio' as any,
+            type: 'audio' as const,
             filename: file.filename,
             originalName: file.originalname,
             size: file.size
           }));
+          console.log('✅ Voice note processed:', mediaItems);
           setSelectedMedia(prev => [...prev, ...mediaItems]);
-          Toast.show({ type: 'success', text1: 'Audio recorded', text2: 'Ready to send' });
+          Toast.show({ type: 'success', text1: 'Voice note ready!', text2: 'Tap send to share your message' });
+        } else {
+          console.error('❌ Upload failed - no files returned');
+          Toast.show({ type: 'error', text1: 'Upload failed', text2: 'Could not process voice note' });
         }
-        setUploading(false);
+      } else {
+        console.error('❌ No recording URI available');
+        Toast.show({ type: 'error', text1: 'Recording Error', text2: 'Could not save voice note' });
       }
+      
+      setUploading(false);
       setRecording(null);
     } catch (error) {
-      console.error('Failed to stop recording:', error);
-      Toast.show({ type: 'error', text1: 'Error', text2: 'Failed to save recording' });
+      console.error('❌ Failed to stop recording:', error);
+      Toast.show({ type: 'error', text1: 'Recording Error', text2: 'Failed to save voice note. Please try again.' });
+      setIsRecording(false);
       setRecording(null);
+      setUploading(false);
     }
   };
 
@@ -705,19 +726,28 @@ const ChatScreen: React.FC = () => {
     const trimmed = input.trim();
     if (!trimmed && selectedMedia.length === 0) {
       console.log('⚠️ Empty message, not sending');
+      Toast.show({ type: 'info', text1: 'Empty message', text2: 'Please type a message or select media' });
       return;
     }
     
-    console.log('✅ Sending message:', trimmed);
+    if (uploading) {
+      console.log('⚠️ Upload in progress, not sending');
+      Toast.show({ type: 'info', text1: 'Please wait', text2: 'Media is still uploading' });
+      return;
+    }
+    
+    console.log('✅ Sending message with text:', trimmed, 'and media:', selectedMedia);
     const tempId = `temp_${Date.now()}_${Math.random().toString(36).slice(2)}`;
     const newMsg: MessageItem = {
       id: tempId,
       text: trimmed,
-      media: selectedMedia,
+      media: [...selectedMedia], // Create a copy
       createdAt: new Date().toISOString(),
       senderId: user?._id || 'me',
       reactions: [],
     };
+    
+    // Add message to UI immediately
     setMessages(prev => {
       const updated = [...prev, newMsg];
       requestAnimationFrame(() => {
@@ -725,9 +755,14 @@ const ChatScreen: React.FC = () => {
       });
       return updated;
     });
+    
+    // Clear input and media
     setInput('');
+    const mediaToSend = [...selectedMedia];
     setSelectedMedia([]);
-    chatAPI.sendMessage(peerId, trimmed, selectedMedia.length > 0 ? selectedMedia : undefined)
+    
+    // Send to server
+    chatAPI.sendMessage(peerId, trimmed, mediaToSend.length > 0 ? mediaToSend : undefined)
       .then((res: any) => {
         console.log('✅ Message sent successfully:', res);
         const serverMsg = res?.data?.message || res?.message;
@@ -736,15 +771,24 @@ const ChatScreen: React.FC = () => {
         if (serverId) {
           setMessages(prev => {
             // Replace temp message with server message
-            return prev.map(m => m.id === tempId ? { ...m, id: serverId, createdAt: serverCreatedAt || m.createdAt } : m);
+            return prev.map(m => m.id === tempId ? { 
+              ...m, 
+              id: serverId, 
+              createdAt: serverCreatedAt || m.createdAt,
+              media: serverMsg?.media || m.media // Use server media if available
+            } : m);
           });
         }
       })
       .catch((e: any) => {
         console.error('❌ Failed to send message:', e);
-        const msg = e?.response?.data?.message || 'Failed to send message';
+        const errorMsg = e?.response?.data?.message || e?.message || 'Failed to send message';
+        // Remove the failed message from UI
         setMessages(prev => prev.filter(m => m.id !== tempId));
-        Toast.show({ type: 'error', text1: 'Error', text2: msg });
+        // Restore the media and input if send failed
+        setSelectedMedia(mediaToSend);
+        setInput(trimmed);
+        Toast.show({ type: 'error', text1: 'Send failed', text2: errorMsg });
       });
   };
 
@@ -1204,10 +1248,10 @@ const ChatScreen: React.FC = () => {
               style={styles.attachMenuItem}
               onPress={() => {
                 setShowAttachMenu(false);
-                pickMedia();
+                setTimeout(() => pickMedia(), 100); // Add small delay to ensure modal closes first
               }}
             >
-              <Text style={styles.attachMenuIcon}>📎</Text>
+              <Text style={styles.attachMenuIcon}>📷</Text>
               <Text style={styles.attachMenuText}>Photo or Video</Text>
             </TouchableOpacity>
 
@@ -1215,18 +1259,7 @@ const ChatScreen: React.FC = () => {
               style={styles.attachMenuItem}
               onPress={() => {
                 setShowAttachMenu(false);
-                setShowEmojiPicker(true);
-              }}
-            >
-              <Text style={styles.attachMenuIcon}>😊</Text>
-              <Text style={styles.attachMenuText}>Emoji</Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity 
-              style={styles.attachMenuItem}
-              onPress={() => {
-                setShowAttachMenu(false);
-                toggleRecording();
+                setTimeout(() => toggleRecording(), 100); // Add small delay to ensure modal closes first
               }}
             >
               <Text style={styles.attachMenuIcon}>{isRecording ? '⏹️' : '🎤'}</Text>
@@ -1236,39 +1269,7 @@ const ChatScreen: React.FC = () => {
         </Pressable>
       </Modal>
 
-      {/* Emoji Picker Modal */}
-      <Modal
-        visible={showEmojiPicker}
-        transparent
-        animationType="slide"
-        onRequestClose={() => setShowEmojiPicker(false)}
-      >
-        <Pressable style={styles.emojiPickerModal} onPress={() => setShowEmojiPicker(false)}>
-          <Pressable style={styles.emojiPickerContainer} onPress={(e) => e.stopPropagation()}>
-            <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 20, marginBottom: 10 }}>
-              <Text style={{ color: theme.colors.text, fontSize: 18, fontWeight: '700' }}>Pick an Emoji</Text>
-              <TouchableOpacity onPress={() => setShowEmojiPicker(false)}>
-                <Text style={{ color: theme.colors.text, fontSize: 24 }}>×</Text>
-              </TouchableOpacity>
-            </View>
-            <ScrollView>
-              <View style={styles.emojiGrid}>
-                {COMMON_EMOJIS.map((emoji, idx) => (
-                  <TouchableOpacity
-                    key={idx}
-                    onPress={() => {
-                      setInput(prev => prev + emoji);
-                      setShowEmojiPicker(false);
-                    }}
-                  >
-                    <Text style={styles.emojiItem}>{emoji}</Text>
-                  </TouchableOpacity>
-                ))}
-              </View>
-            </ScrollView>
-          </Pressable>
-        </Pressable>
-      </Modal>
+
 
       {/* Fullscreen Media Viewer */}
       <Modal
