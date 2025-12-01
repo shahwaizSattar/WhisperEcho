@@ -11,7 +11,7 @@ const getMediaBaseURL = () => {
   }
 
   if (!__DEV__) {
-    return 'https://whisperecho-backend-production.up.railway.app';
+    return 'https://echo-yddc.onrender.com';
   }
 
   // Get IP and port from environment variables

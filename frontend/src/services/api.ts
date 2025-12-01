@@ -8,7 +8,7 @@ const getBaseURL = () => {
   const envBase = (process as any)?.env?.EXPO_PUBLIC_API_BASE as string | undefined;
   if (envBase) return envBase.endsWith('/api') ? envBase : `${envBase}/api`;
 
-  if (!__DEV__) return 'https://whisperecho-backend-production.up.railway.app/api';
+  if (!__DEV__) return 'https://echo-yddc.onrender.com/api';
 
   // Get IP and port from environment variables
   const SERVER_IP = (process as any)?.env?.EXPO_PUBLIC_SERVER_IP || '172.20.10.2';
