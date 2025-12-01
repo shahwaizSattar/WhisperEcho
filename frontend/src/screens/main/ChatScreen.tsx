@@ -495,7 +495,7 @@ const ChatScreen: React.FC = () => {
       console.log('✅ Media permission granted, launching gallery...');
       
       const options = {
-        mediaTypes: ['Images', 'Videos'] as any,
+        mediaTypes: ['images', 'videos'] as any,
         allowsMultipleSelection: true,
         quality: 0.8,
         videoMaxDuration: 60,
@@ -532,7 +532,7 @@ const ChatScreen: React.FC = () => {
       console.log('✅ Camera permission granted, launching camera...');
       
       const options = {
-        mediaTypes: ['Images', 'Videos'] as any,
+        mediaTypes: ['images', 'videos'] as any,
         quality: 0.8,
         videoMaxDuration: 60,
         allowsEditing: false,
