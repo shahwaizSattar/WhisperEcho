@@ -481,7 +481,11 @@ const ChatScreen: React.FC = () => {
   const pickFromGallery = async () => {
     try {
       console.log('📷 Opening gallery...');
+      
+      // Check permissions first
       const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+      console.log('📋 Media library permission status:', status);
+      
       if (status !== 'granted') {
         console.log('❌ Media permission denied');
         Toast.show({ type: 'error', text1: 'Permission denied', text2: 'Please allow media access in settings' });
@@ -489,14 +493,20 @@ const ChatScreen: React.FC = () => {
       }
 
       console.log('✅ Media permission granted, launching gallery...');
-      const result = await ImagePicker.launchImageLibraryAsync({
-        mediaTypes: ['images', 'videos'],
+      
+      const options = {
+        mediaTypes: ImagePicker.MediaTypeOptions.All,
         allowsMultipleSelection: true,
         quality: 0.8,
         videoMaxDuration: 60,
         allowsEditing: false,
-      });
-
+      };
+      
+      console.log('📋 Gallery options:', options);
+      
+      const result = await ImagePicker.launchImageLibraryAsync(options);
+      console.log('📱 Gallery result received');
+      
       await handleMediaResult(result);
     } catch (error) {
       console.error('❌ Gallery picker error:', error);
@@ -508,7 +518,11 @@ const ChatScreen: React.FC = () => {
   const takePhoto = async () => {
     try {
       console.log('📸 Opening camera...');
+      
+      // Check permissions first
       const { status } = await ImagePicker.requestCameraPermissionsAsync();
+      console.log('📋 Camera permission status:', status);
+      
       if (status !== 'granted') {
         console.log('❌ Camera permission denied');
         Toast.show({ type: 'error', text1: 'Permission denied', text2: 'Please allow camera access in settings' });
@@ -516,13 +530,19 @@ const ChatScreen: React.FC = () => {
       }
 
       console.log('✅ Camera permission granted, launching camera...');
-      const result = await ImagePicker.launchCameraAsync({
-        mediaTypes: ['images', 'videos'],
+      
+      const options = {
+        mediaTypes: ImagePicker.MediaTypeOptions.All,
         quality: 0.8,
         videoMaxDuration: 60,
         allowsEditing: false,
-      });
-
+      };
+      
+      console.log('📋 Camera options:', options);
+      
+      const result = await ImagePicker.launchCameraAsync(options);
+      console.log('📱 Camera result received');
+      
       await handleMediaResult(result);
     } catch (error) {
       console.error('❌ Camera error:', error);
@@ -532,21 +552,41 @@ const ChatScreen: React.FC = () => {
   };
 
   const handleMediaResult = async (result: any) => {
-    console.log('📱 Media result:', result);
+    console.log('📱 Media result:', JSON.stringify(result, null, 2));
 
     if (!result.canceled && result.assets && result.assets.length > 0) {
       setUploading(true);
       Toast.show({ type: 'info', text1: 'Uploading...', text2: `Processing ${result.assets.length} file(s)` });
       
       try {
-        const files = result.assets.map((asset: any, index: number) => ({
-          uri: asset.uri,
-          type: asset.type === 'video' ? 'video/mp4' : 'image/jpeg',
-          name: asset.fileName || `media_${Date.now()}_${index}.${asset.type === 'video' ? 'mp4' : 'jpg'}`,
-          mediaType: asset.type as 'photo' | 'video',
-        }));
+        console.log('📋 Processing assets:', result.assets);
+        
+        const files = result.assets.map((asset: any, index: number) => {
+          console.log(`📄 Asset ${index}:`, {
+            uri: asset.uri,
+            type: asset.type,
+            fileName: asset.fileName,
+            width: asset.width,
+            height: asset.height,
+            mimeType: asset.mimeType
+          });
+          
+          // Determine media type from asset type or mimeType
+          const isVideo = asset.type === 'video' || asset.mimeType?.startsWith('video/');
+          const mediaType = isVideo ? 'video' : 'photo';
+          const fileType = isVideo ? 'video/mp4' : 'image/jpeg';
+          const extension = isVideo ? 'mp4' : 'jpg';
+          
+          return {
+            uri: asset.uri,
+            type: fileType,
+            name: asset.fileName || `media_${Date.now()}_${index}.${extension}`,
+            mediaType: mediaType as 'photo' | 'video',
+          };
+        });
 
-        console.log('📤 Uploading files:', files.map((f: any) => ({ name: f.name, type: f.type, mediaType: f.mediaType })));
+        console.log('📤 Uploading files:', files.map((f: any) => ({ name: f.name, type: f.type, mediaType: f.mediaType, uri: f.uri.substring(0, 50) + '...' })));
+        
         const uploadRes = await mediaAPI.uploadMultiple(files);
         console.log('📥 Upload response:', uploadRes);
         
@@ -574,7 +614,10 @@ const ChatScreen: React.FC = () => {
         setUploading(false);
       }
     } else {
-      console.log('📷 Media selection cancelled or no assets selected');
+      console.log('📷 Media selection cancelled or no assets selected. Result:', {
+        canceled: result.canceled,
+        assets: result.assets?.length || 0
+      });
     }
   };
 
