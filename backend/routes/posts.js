@@ -5,6 +5,7 @@ const Notification = require('../models/Notification');
 const { authenticateToken, optionalAuth } = require('../middleware/auth');
 const { body, validationResult } = require('express-validator');
 const { moderateContent } = require('../utils/moderationUtils');
+const { v4: uuidv4 } = require('uuid');
 
 const router = express.Router();
 
@@ -1023,8 +1024,78 @@ router.post('/:postId/report', authenticateToken, [
       });
     }
 
-    // In a real app, you'd store this in a Reports collection
-    console.log(`Post ${postId} reported by user ${userId} for reason: ${reason}`);
+    // Create report in database
+    const Report = require('../models/Report');
+
+    // Check if user already reported this post
+    const existingReport = await Report.findOne({
+      postId: postId,
+      reportedBy: userId
+    });
+
+    if (existingReport) {
+      return res.status(400).json({
+        success: false,
+        message: 'You have already reported this post'
+      });
+    }
+
+    // Create new report
+    const report = new Report({
+      reportId: uuidv4(),
+      postId: postId,
+      reportedBy: userId,
+      postOwner: post.author,
+      reason: reason,
+      postSnapshot: {
+        content: post.content?.text || '',
+        media: post.content?.media || [],
+        category: post.category,
+        createdAt: post.createdAt
+      },
+      status: 'pending'
+    });
+
+    try {
+      await report.save();
+    } catch (saveError) {
+      console.error('Error saving report:', saveError);
+      return res.status(400).json({
+        success: false,
+        message: saveError.message || 'Failed to save report'
+      });
+    }
+
+    // Add report reference to post
+    if (!post.reports) {
+      post.reports = [];
+    }
+    post.reports.push({
+      reportId: report.reportId,
+      reporter: userId,
+      reason: reason,
+      reportedAt: new Date()
+    });
+
+    // Check moderation rules for auto-flagging
+    const ModerationRule = require('../models/ModerationRule');
+    const moderationRule = await ModerationRule.findOne();
+    
+    if (moderationRule && moderationRule.autoFlagSettings.enabled) {
+      if (post.reports.length >= moderationRule.autoFlagSettings.minReports) {
+        post.status = 'flagged';
+      }
+      
+      // Auto-remove if threshold reached
+      if (post.reports.length >= moderationRule.autoFlagSettings.autoRemoveThreshold) {
+        post.status = 'removed';
+        post.removedAt = new Date();
+      }
+    }
+
+    await post.save();
+
+    console.log(`Post ${postId} reported by user ${userId} for reason: ${reason} - Report saved to database`);
 
     res.json({
       success: true,

@@ -46,7 +46,7 @@ const postSchema = new mongoose.Schema({
       },
       effect: {
         type: String,
-        enum: ['none', 'deep', 'robot', 'soft', 'glitchy', 'girly', 'boyish'],
+        enum: ['none', 'deep', 'robot', 'soft', 'glitchy', 'girly', 'boyish', null],
         default: 'none'
       },
       duration: {
@@ -222,6 +222,22 @@ const postSchema = new mongoose.Schema({
     isReviewed: { type: Boolean, default: false },
     flaggedFor: [String],
     aiConfidence: Number
+  },
+  status: {
+    type: String,
+    enum: ['active', 'removed', 'flagged'],
+    default: 'active'
+  },
+  violationCount: {
+    type: Number,
+    default: 0
+  },
+  removedBy: {
+    type: mongoose.Schema.Types.Mixed, // Allow both ObjectId and String for hardcoded admin
+    ref: 'User'
+  },
+  removedAt: {
+    type: Date
   }
 }, {
   timestamps: true

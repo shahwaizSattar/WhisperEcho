@@ -145,6 +145,28 @@ const userSchema = new mongoose.Schema({
   lastActive: {
     type: Date,
     default: Date.now
+  },
+  role: {
+    type: String,
+    enum: ['user', 'admin'],
+    default: 'user'
+  },
+  violationCount: {
+    type: Number,
+    default: 0
+  },
+  shadowbanned: {
+    type: Boolean,
+    default: false
+  },
+  shadowbannedAt: {
+    type: Date
+  },
+  deviceHash: {
+    type: String
+  },
+  fakeIP: {
+    type: String
   }
 }, {
   timestamps: true

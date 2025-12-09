@@ -31,6 +31,8 @@ const whisperWallRoutes = require('./routes/whisperwall');
 const reactionRoutes = require('./routes/reactions');
 const chatRoutes = require('./routes/chat');
 const locationRoutes = require('./routes/location');
+const adminRoutes = require('./routes/admin');
+const reportRoutes = require('./routes/reports');
 
 // Upload middleware
 const { uploadMiddleware, getFileUrl } = require('./middleware/upload');
@@ -62,7 +64,7 @@ app.use(helmet({
 const corsOptions = {
   origin: '*', // Allow all origins
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'X-Admin-Auth', 'X-Admin-Token'],
   credentials: true
 };
 app.use(cors(corsOptions));
@@ -75,7 +77,7 @@ app.use((req, res, next) => {
   if (req.method === 'OPTIONS') {
     res.header('Access-Control-Allow-Origin', '*');
     res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
-    res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+    res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Admin-Auth, X-Admin-Token');
     res.status(200).end();
     return;
   }
@@ -208,6 +210,8 @@ app.use('/api/whisperwall', whisperWallRoutes);
 app.use('/api/reactions', reactionRoutes);
 app.use('/api/chat', chatRoutes);
 app.use('/api/location', locationRoutes);
+app.use('/api/admin', adminRoutes);
+app.use('/api/reports', reportRoutes);
 
 // --- Media upload endpoints ---
 app.post('/api/upload/single', uploadMiddleware.single('media'), uploadMiddleware.handleError, (req, res) => {
